@@ -14,7 +14,7 @@ const pinoConfig: TransportMultiOptions = {
       options: {
         uri: process.env.MONGODB_URL,
         database: process.env.MONGODB_DATABASE,
-        collection: "backend-log",
+        collection: "worker-log",
         mongoOptions: {
           auth: {
             username: process.env.MONGODB_USERNAME,
