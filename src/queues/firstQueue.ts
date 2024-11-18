@@ -1,4 +1,5 @@
 import { Job } from "bullmq";
+import logger from "../logger";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));

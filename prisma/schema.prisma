@@ -1,0 +1,611 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["typedSql"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model addresses {
+  id           String   @id
+  personId     String   @unique
+  street       String   @db.VarChar(255)
+  number       String
+  complement   String?
+  neighborhood String
+  city         String
+  state        String
+  country      String
+  zipCode      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  persons      persons  @relation(fields: [personId], references: [id])
+}
+
+model answer_question_evaluation {
+  id                   String                @id
+  evaluationStudentId  String
+  questionGridId       String
+  questionOptionGridId String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime
+  evaluation_student   evaluation_student    @relation(fields: [evaluationStudentId], references: [id])
+  question_grid        question_grid         @relation(fields: [questionGridId], references: [id])
+  question_option_grid question_option_grid? @relation(fields: [questionOptionGridId], references: [id])
+}
+
+model classroom {
+  id                String              @id
+  courseId          String
+  gridId            String
+  name              String
+  active            Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime
+  endYear           Int?
+  startYear         Int
+  courses           courses             @relation(fields: [courseId], references: [id])
+  grid              grid                @relation(fields: [gridId], references: [id])
+  classroom_student classroom_student[]
+}
+
+model classroom_student {
+  classroomId String
+  personId    String
+  active      Boolean   @default(true)
+  updatedAt   DateTime
+  assignedAt  DateTime  @default(now())
+  classroom   classroom @relation(fields: [classroomId], references: [id])
+  persons     persons   @relation(fields: [personId], references: [id])
+
+  @@id([classroomId, personId])
+}
+
+model course_categories {
+  id        String    @id
+  name      String
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime
+  courses   courses[]
+}
+
+model course_payment_method {
+  courseId        String
+  paymentMethodId String
+  active          Boolean        @default(false)
+  assignedAt      DateTime       @default(now())
+  courses         courses        @relation(fields: [courseId], references: [id])
+  payment_method  payment_method @relation(fields: [paymentMethodId], references: [id])
+
+  @@id([courseId, paymentMethodId])
+}
+
+model courses {
+  id                     String                   @id
+  name                   String
+  description            String?                  @db.VarChar(255)
+  coverURL               String?
+  active                 Boolean                  @default(true)
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime
+  courseCategoryId       String
+  coverPublicId          String?
+  visibility             CourseVisibility         @default(private)
+  coverFilename          String?
+  vacancy                Int?
+  valueAmount            Float?
+  classroom              classroom[]
+  course_payment_method  course_payment_method[]
+  course_categories      course_categories        @relation(fields: [courseCategoryId], references: [id])
+  discount_coupon        discount_coupon[]
+  grid                   grid[]
+  grid_module_discipline grid_module_discipline[]
+  notice_course          notice_course[]
+}
+
+model discipline_student {
+  gridModuleDisciplineId   String
+  personId                 String
+  conclusionPercent        Int?
+  notes                    String?
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime
+  disciplineStudentStatus  DisciplineStudentStatus? @default(inProgress)
+  scoreDot                 Float?
+  dotPerAssessmentActivity Float?
+  dotPerFinalExam          Float?
+  attendedAt               Int
+  grid_module_discipline   grid_module_discipline   @relation(fields: [gridModuleDisciplineId], references: [id])
+  persons                  persons                  @relation(fields: [personId], references: [id])
+
+  @@id([gridModuleDisciplineId, personId])
+}
+
+model disciplines {
+  id                     String                   @id
+  name                   String
+  description            String
+  coverURL               String?
+  coverPublicId          String?
+  active                 Boolean                  @default(true)
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime
+  coverFilename          String?
+  grid_module_discipline grid_module_discipline[]
+  questions              questions[]
+  unities                unities[]
+}
+
+model discount_coupon {
+  id        String   @id
+  courseId  String
+  name      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  percent   Int
+  courses   courses  @relation(fields: [courseId], references: [id])
+}
+
+model documents {
+  id                String              @id
+  name              String
+  active            Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime
+  documents_persons documents_persons[]
+}
+
+model documents_persons {
+  documentId                      String
+  personId                        String
+  deadline                        DateTime?
+  sent                            DateTime?
+  active                          Boolean                           @default(true)
+  assignedAt                      DateTime                          @default(now())
+  updatedAt                       DateTime
+  status                          DocumentPersonStatus              @default(pending)
+  filePublicId                    String?
+  fileURL                         String?
+  filename                        String?
+  documents                       documents                         @relation(fields: [documentId], references: [id])
+  persons                         persons                           @relation(fields: [personId], references: [id])
+  service_support_document_person service_support_document_person[]
+
+  @@id([documentId, personId])
+}
+
+model evaluation_student {
+  id                         String                       @id
+  personId                   String
+  gridModuleDisciplineId     String?
+  unitGridId                 String?
+  evaluationType             EvaluationType
+  score                      Int?
+  createdAt                  DateTime                     @default(now())
+  updateAt                   DateTime
+  completedAt                DateTime?
+  status                     EvaluationStatus             @default(notCompleted)
+  order                      Int                          @default(autoincrement())
+  scoreDot                   Float?
+  answer_question_evaluation answer_question_evaluation[]
+  grid_module_discipline     grid_module_discipline?      @relation(fields: [gridModuleDisciplineId], references: [id])
+  persons                    persons                      @relation(fields: [personId], references: [id])
+  unit_grid                  unit_grid?                   @relation(fields: [unitGridId], references: [id])
+}
+
+model grid {
+  id                     String                   @id
+  courseId               String
+  name                   String
+  active                 Boolean                  @default(true)
+  creadAt                DateTime                 @default(now())
+  updatedAt              DateTime
+  classroom              classroom[]
+  courses                courses                  @relation(fields: [courseId], references: [id])
+  grid_module_discipline grid_module_discipline[]
+  module                 module[]
+}
+
+model grid_module_discipline {
+  id                 String               @id
+  gridId             String
+  moduleId           String
+  disciplineId       String
+  active             Boolean              @default(true)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime
+  courseId           String
+  discipline_student discipline_student[]
+  evaluation_student evaluation_student[]
+  courses            courses              @relation(fields: [courseId], references: [id])
+  disciplines        disciplines          @relation(fields: [disciplineId], references: [id])
+  grid               grid                 @relation(fields: [gridId], references: [id])
+  module             module               @relation(fields: [moduleId], references: [id])
+  question_grid      question_grid[]
+  unit_grid          unit_grid[]
+}
+
+model lesson_grid {
+  id             String           @id
+  unitGridId     String
+  name           String
+  description    String?
+  videoURL       String?
+  videoPublicId  String?
+  videoFilename  String?
+  videoDuration  Float
+  bookURL        String?
+  bookPublicId   String?
+  bookFilename   String?
+  active         Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  unit_grid      unit_grid        @relation(fields: [unitGridId], references: [id])
+  lesson_student lesson_student[]
+}
+
+model lesson_student {
+  lessonGridId String
+  personId     String
+  watched      Boolean     @default(false)
+  assignedAt   DateTime    @default(now())
+  updatedAt    DateTime
+  lesson_grid  lesson_grid @relation(fields: [lessonGridId], references: [id])
+  persons      persons     @relation(fields: [personId], references: [id])
+
+  @@id([lessonGridId, personId])
+}
+
+model lessons {
+  id            String   @id
+  unitId        String
+  name          String
+  description   String?
+  videoURL      String
+  videoPublicId String
+  videoDuration Float
+  bookURL       String?
+  bookPublicId  String?
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime
+  bookFilename  String?
+  videoFilename String?
+  unities       unities  @relation(fields: [unitId], references: [id])
+}
+
+model module {
+  id                     String                   @id
+  gridId                 String
+  name                   String
+  active                 Boolean                  @default(true)
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime
+  grid_module_discipline grid_module_discipline[]
+  grid                   grid                     @relation(fields: [gridId], references: [id])
+}
+
+model notice {
+  id                String          @id
+  subject           String
+  description       String
+  active            Boolean         @default(true)
+  publishedAt       DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime
+  category          NoticeCategory
+  email             Boolean         @default(false)
+  notificationPanel Boolean         @default(false)
+  status            NoticeStatus    @default(pending)
+  notice_course     notice_course[]
+  notice_person     notice_person[]
+}
+
+model notice_course {
+  noticeId   String
+  courseId   String
+  active     Boolean  @default(true)
+  assignedAt DateTime @default(now())
+  updatedAt  DateTime
+  courses    courses  @relation(fields: [courseId], references: [id])
+  notice     notice   @relation(fields: [noticeId], references: [id])
+
+  @@id([noticeId, courseId])
+}
+
+model notice_person {
+  noticeId   String
+  personId   String
+  read       Boolean  @default(false)
+  assignedAt DateTime @default(now())
+  updatedAt  DateTime
+  notice     notice   @relation(fields: [noticeId], references: [id])
+  persons    persons  @relation(fields: [personId], references: [id])
+
+  @@id([noticeId, personId])
+}
+
+model payment_method {
+  id                    String                  @id
+  name                  String
+  inCash                Boolean                 @default(false)
+  inTerm                Boolean                 @default(false)
+  active                Boolean                 @default(true)
+  createdAt             DateTime                @default(now())
+  updateAt              DateTime
+  course_payment_method course_payment_method[]
+}
+
+model permissions {
+  id                String             @id
+  name              String
+  active            Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime
+  roles_permissions roles_permissions?
+}
+
+model persons {
+  id                                                   String               @id
+  userId                                               String               @unique
+  registration                                         String?
+  fullname                                             String
+  documentId                                           String?
+  cpf                                                  String?              @unique
+  cellphone                                            String?
+  active                                               Boolean              @default(true)
+  createdAt                                            DateTime             @default(now())
+  updatedAt                                            DateTime
+  email                                                String               @unique
+  roleType                                             String
+  countryCode                                          String?
+  countryDialCode                                      String?
+  addresses                                            addresses?
+  classroom_student                                    classroom_student[]
+  discipline_student                                   discipline_student[]
+  documents_persons                                    documents_persons[]
+  evaluation_student                                   evaluation_student[]
+  lesson_student                                       lesson_student[]
+  notice_person                                        notice_person[]
+  users                                                users                @relation(fields: [userId], references: [id])
+  service_support_service_support_attendentIdTopersons service_support?     @relation("service_support_attendentIdTopersons")
+  service_support_service_support_requesterIdTopersons service_support[]    @relation("service_support_requesterIdTopersons")
+}
+
+model question_grid {
+  id                         String                       @id
+  unitGridId                 String?
+  gridModuleDisciplineId     String?
+  statement                  String
+  score                      Int
+  active                     Boolean                      @default(true)
+  createdAt                  DateTime                     @default(now())
+  updatedAt                  DateTime
+  imagePublicId              String?
+  imageURL                   String?
+  imageFilename              String?
+  answer_question_evaluation answer_question_evaluation[]
+  grid_module_discipline     grid_module_discipline?      @relation(fields: [gridModuleDisciplineId], references: [id])
+  unit_grid                  unit_grid?                   @relation(fields: [unitGridId], references: [id])
+  question_option_grid       question_option_grid[]
+}
+
+model question_option {
+  id            String    @id
+  questionId    String
+  name          String
+  isRight       Boolean   @default(false)
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime
+  imageURL      String?
+  imagePublicId String?
+  imageFilename String?
+  questions     questions @relation(fields: [questionId], references: [id])
+}
+
+model question_option_grid {
+  id                         String                       @id
+  questionGridId             String
+  name                       String
+  isRight                    Boolean                      @default(false)
+  active                     Boolean                      @default(true)
+  createdAt                  DateTime                     @default(now())
+  updatedAt                  DateTime
+  imagePublicId              String?
+  imageURL                   String?
+  imageFilename              String?
+  answer_question_evaluation answer_question_evaluation[]
+  question_grid              question_grid                @relation(fields: [questionGridId], references: [id])
+}
+
+model questions {
+  id              String            @id
+  unitId          String?
+  disciplineId    String?
+  statement       String
+  score           Int
+  active          Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  imageURL        String?
+  imagePublicId   String?
+  imageFilename   String?
+  question_option question_option[]
+  disciplines     disciplines?      @relation(fields: [disciplineId], references: [id])
+  unities         unities?          @relation(fields: [unitId], references: [id])
+}
+
+model roles {
+  id                String             @id
+  name              String             @unique
+  type              String             @unique
+  active            Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime
+  roles_permissions roles_permissions?
+  users             users[]
+}
+
+model roles_permissions {
+  roleId       String      @unique
+  permissionId String      @unique
+  active       Boolean     @default(true)
+  assignedAt   DateTime    @default(now())
+  updatedAt    DateTime
+  permissions  permissions @relation(fields: [permissionId], references: [id])
+  roles        roles       @relation(fields: [roleId], references: [id])
+
+  @@id([roleId, permissionId])
+}
+
+model service_support {
+  id                                           Int                               @id @default(autoincrement())
+  requesterId                                  String
+  status                                       ServiceSupportStatus              @default(notStarted)
+  category                                     ServiceSupportCategory
+  subject                                      String
+  message                                      String?
+  answer                                       String?
+  attendentId                                  String?                           @unique
+  createdAt                                    DateTime                          @default(now())
+  updatedAt                                    DateTime
+  active                                       Boolean                           @default(true)
+  cellphone                                    String?
+  countryCode                                  String?
+  countryDialCode                              String?
+  imageFilename                                String?
+  imagePublicId                                String?
+  imageURL                                     String?
+  type                                         ServiceSupportType                @default(manual)
+  persons_service_support_attendentIdTopersons persons?                          @relation("service_support_attendentIdTopersons", fields: [attendentId], references: [id])
+  persons_service_support_requesterIdTopersons persons                           @relation("service_support_requesterIdTopersons", fields: [requesterId], references: [id])
+  service_support_document_person              service_support_document_person[]
+}
+
+model service_support_document_person {
+  id                String            @id
+  serviceSupportId  Int
+  documentId        String
+  personId          String
+  createdAt         DateTime          @default(now())
+  documents_persons documents_persons @relation(fields: [documentId, personId], references: [documentId, personId])
+  service_support   service_support   @relation(fields: [serviceSupportId], references: [id])
+}
+
+model system_configuration {
+  id        Int      @id @default(autoincrement())
+  name      String
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+model unit_grid {
+  id                     String                 @id
+  gridModuleDisciplineId String
+  name                   String
+  active                 Boolean                @default(true)
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime
+  evaluation_student     evaluation_student[]
+  lesson_grid            lesson_grid[]
+  question_grid          question_grid[]
+  grid_module_discipline grid_module_discipline @relation(fields: [gridModuleDisciplineId], references: [id])
+}
+
+model unities {
+  id           String      @id
+  disciplineId String
+  name         String
+  active       Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime
+  lessons      lessons[]
+  questions    questions[]
+  disciplines  disciplines @relation(fields: [disciplineId], references: [id])
+}
+
+model users {
+  id               String           @id
+  externalId       String           @unique
+  roleType         String
+  colorMode        ColorMode        @default(light)
+  createdAt        DateTime         @default(now())
+  notificationMode NotificationMode @default(notificationPanelOnly)
+  active           Boolean          @default(true)
+  accessGranted    Boolean          @default(false)
+  persons          persons?
+  roles            roles            @relation(fields: [roleType], references: [type])
+}
+
+enum ColorMode {
+  light
+  dark
+}
+
+enum CourseVisibility {
+  private
+  public
+}
+
+enum DisciplineStudentStatus {
+  inProgress
+  approved
+  refused
+}
+
+enum DocumentPersonStatus {
+  accepted
+  refused
+  analyzing
+  pending
+}
+
+enum EvaluationStatus {
+  notCompleted
+  completed
+}
+
+enum EvaluationType {
+  assessment
+  final
+}
+
+enum NoticeCategory {
+  info
+  conclusion
+  warning
+  critical
+}
+
+enum NoticeStatus {
+  pending
+  sent
+}
+
+enum NotificationMode {
+  notificationPanelOnly
+  notificationPanelAndEmail
+}
+
+enum ServiceSupportCategory {
+  payment
+  technicalProblem
+  documentation
+}
+
+enum ServiceSupportStatus {
+  notStarted
+  inProgress
+  done
+}
+
+enum ServiceSupportType {
+  manual
+  automatic
+}
