@@ -586,6 +586,7 @@ enum NoticeCategory {
 enum NoticeStatus {
   pending
   sent
+  processing
 }
 
 enum NotificationMode {

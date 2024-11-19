@@ -1,17 +1,22 @@
 import "dotenv/config";
 import { Worker } from "bullmq";
-import redisConfig from "./config/redis";
-import * as queues from "./queues";
-import logger from "./logger";
+import redisConfig from "../config/redis";
+import * as queues from "./queuesJobs";
+import logger from "../config/logger";
 
-const workerList = Object.values(queues).map((queue) => ({
+const workers = Object.values(queues).map((queue) => ({
   instance: new Worker(queue.name, queue.job, {
-    connection: redisConfig,
+    connection: {
+      ...redisConfig,
+      retryStrategy: function (times: number) {
+        return Math.max(Math.min(Math.exp(times), 20000), 1000);
+      },
+    },
     autorun: false, // Should not execute when instatiante
   }),
 }));
 
-workerList.forEach((worker) => {
+workers.forEach((worker) => {
   worker.instance.run(); // Execute workers
 
   worker.instance.on("failed", (job, filedReason) => {
@@ -28,6 +33,9 @@ workerList.forEach((worker) => {
     logger.info(`JOB COMPLETED: ${job.id} - ${job.name} has completed!`);
   });
   worker.instance.on("error", (err) => {
-    logger.fatal(`WORKER ERROR: ${err}`);
+    logger.error(`WORKER ERROR: ${err}`);
+  });
+  worker.instance.on("ioredis:close", () => {
+    logger.fatal(`WORKER REDIS CLOSE`);
   });
 });
