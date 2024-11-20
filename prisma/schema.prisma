@@ -290,19 +290,19 @@ model module {
 }
 
 model notice {
-  id                String          @id
-  subject           String
-  description       String
-  active            Boolean         @default(true)
-  publishedAt       DateTime?
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime
-  category          NoticeCategory
-  email             Boolean         @default(false)
-  notificationPanel Boolean         @default(false)
-  status            NoticeStatus    @default(pending)
-  notice_course     notice_course[]
-  notice_person     notice_person[]
+  id                  String                @id
+  subject             String
+  description         String
+  active              Boolean               @default(true)
+  publishedAt         DateTime?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime
+  category            NoticeCategory
+  email               Boolean               @default(false)
+  notificationPanel   Boolean               @default(false)
+  status              NoticeStatus          @default(pending)
+  notice_course       notice_course[]
+  notification_person notification_person[]
 }
 
 model notice_course {
@@ -315,18 +315,6 @@ model notice_course {
   notice     notice   @relation(fields: [noticeId], references: [id])
 
   @@id([noticeId, courseId])
-}
-
-model notice_person {
-  noticeId   String
-  personId   String
-  read       Boolean  @default(false)
-  assignedAt DateTime @default(now())
-  updatedAt  DateTime
-  notice     notice   @relation(fields: [noticeId], references: [id])
-  persons    persons  @relation(fields: [personId], references: [id])
-
-  @@id([noticeId, personId])
 }
 
 model payment_method {
@@ -350,17 +338,17 @@ model permissions {
 }
 
 model persons {
-  id                                                   String               @id
-  userId                                               String               @unique
+  id                                                   String                @id
+  userId                                               String                @unique
   registration                                         String?
   fullname                                             String
   documentId                                           String?
-  cpf                                                  String?              @unique
+  cpf                                                  String?               @unique
   cellphone                                            String?
-  active                                               Boolean              @default(true)
-  createdAt                                            DateTime             @default(now())
+  active                                               Boolean               @default(true)
+  createdAt                                            DateTime              @default(now())
   updatedAt                                            DateTime
-  email                                                String               @unique
+  email                                                String                @unique
   roleType                                             String
   countryCode                                          String?
   countryDialCode                                      String?
@@ -370,10 +358,10 @@ model persons {
   documents_persons                                    documents_persons[]
   evaluation_student                                   evaluation_student[]
   lesson_student                                       lesson_student[]
-  notice_person                                        notice_person[]
-  users                                                users                @relation(fields: [userId], references: [id])
-  service_support_service_support_attendentIdTopersons service_support?     @relation("service_support_attendentIdTopersons")
-  service_support_service_support_requesterIdTopersons service_support[]    @relation("service_support_requesterIdTopersons")
+  notification_person                                  notification_person[]
+  users                                                users                 @relation(fields: [userId], references: [id])
+  service_support_service_support_attendentIdTopersons service_support?      @relation("service_support_attendentIdTopersons")
+  service_support_service_support_requesterIdTopersons service_support[]     @relation("service_support_requesterIdTopersons")
 }
 
 model question_grid {
@@ -541,6 +529,17 @@ model users {
   accessGranted    Boolean          @default(false)
   persons          persons?
   roles            roles            @relation(fields: [roleType], references: [type])
+}
+
+model notification_person {
+  id         Int      @id @default(autoincrement())
+  noticeId   String?
+  personId   String?
+  read       Boolean  @default(false)
+  assignedAt DateTime @default(now())
+  updatedAt  DateTime
+  notice     notice?  @relation(fields: [noticeId], references: [id])
+  persons    persons? @relation(fields: [personId], references: [id])
 }
 
 enum ColorMode {

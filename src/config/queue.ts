@@ -3,7 +3,7 @@ import type { JobsOptions } from "bullmq";
 import redisConfig from "./redis";
 import logger from "./logger";
 
-const queuesList = ["noticeCheckerQueue", "processNoticeQueue", "testQueue"];
+const queuesList = ["noticeCheckerQueue", "processNoticeQueue"];
 
 const queues = queuesList.map((queueName) => ({
   instance: new Queue(queueName, {
