@@ -14,4 +14,4 @@ RUN yarn run build
 
 RUN npx prisma generate --sql
 
-CMD ["node", "./dist/http/server.js"]
+CMD ["node", "./dist/worker"]
